@@ -27,6 +27,11 @@ class ResponseException {
   final String errorType;
   final int statusCode;
   ResponseException(this.message, this.data, this.errorType, this.statusCode);
+
+  @override
+  String toString() {
+    return this.message;
+  }
 }
 
 class AwsSSM {
@@ -76,7 +81,6 @@ class AwsSSM {
     final accessKeyId = credentials['Credentials']['AccessKeyId'];
     final secretKey = credentials['Credentials']['SecretKey'];
     final sessionToken = credentials['Credentials']['SessionToken'];
-
     datetime ??= getDateTime();
 
     Map<String, String> headers = {
@@ -173,7 +177,7 @@ class AwsSSM {
             break;
           }
         }
-        throw ResponseException('ResponseException', data, errorType, response.statusCode);
+        throw ResponseException(data?['message'] ?? 'ResponseException', data, errorType, response.statusCode);
       }
     } catch (ex) {
       rethrow;
@@ -195,10 +199,12 @@ class AwsSSM {
     if (!kIsWeb) {
       try {
         http.Response res = await http.get(Uri.parse('https://mws.amazonservices.com/'));
-        RegExp exp = RegExp(r"timestamp='(.*)'", multiLine: true);
+        RegExp exp = RegExp(r'timestamp="(.*)"', multiLine: true);
         final match = exp.firstMatch(res.body);
         if (match != null) {
-          return match.group(1).toString().replaceAll(RegExp(r'\.\d*Z$'), 'Z').replaceAll(RegExp(r'[:-]|\.\d{3}'), '');
+          return match.group(1).toString()
+              .replaceAll(RegExp(r'\.\d*Z$'), 'Z')
+              .replaceAll(RegExp(r'[:-]|\.\d{3}'), '');
         }
         // ignore: empty_catches
       } catch (e) {}
